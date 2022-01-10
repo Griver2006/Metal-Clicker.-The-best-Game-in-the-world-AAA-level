@@ -7,8 +7,11 @@ pygame.init()
 size = width, height = 1150, 700
 screen = pygame.display.set_mode(size)
 all_sprites = pygame.sprite.Group()
-fontBig = pygame.font.Font(None, 40)
-fontSmole = pygame.font.Font(None, 30)
+go = False
+
+
+def monitor_text(text, y, scale=40):
+    return [pygame.font.Font(None, scale).render(f'{text}', True, (1, 1, 1)), (70, y)]
 
 
 def load_image(name, colorkey=None):
@@ -49,30 +52,44 @@ class Monitor(pygame.sprite.Sprite):
         super(Monitor, self).__init__(*groups)
         self.image = Monitor.image.copy()
         self.kilograms = 0
-        self.max_kilograms = 10000
-        proc = self.kilograms // (self.max_kilograms / 255)
-        self.color = (255, 255 - proc, 255 - proc)
+        self.max_kilograms = 100
+        self.money_business = 530
+        self.price_of_kilogram = 20
+        self.sale_price = 22
+        proc = self.kilograms / (self.max_kilograms / 255)
+        self.color_metal = (255, 255 - proc, 255 - proc)
         self.rect = self.image.get_rect()
         self.rect.x = 0
         self.rect.y = 0
         self.update_values()
 
     def add_counter(self):
-        self.kilograms += 1
-        self.update_values()
+        if self.money_business >= self.price_of_kilogram:
+            self.kilograms += 1
+            self.money_business -= self.price_of_kilogram
+            self.update_values()
+
+    def lowering(self):
+        pass
 
     def update_values(self):
         proc = self.kilograms / (self.max_kilograms / 255)
-        self.color = (255, 255 - proc, 255 - proc)
+        self.color_metal = (255, 255 - proc, 255 - proc)
         self.image = pygame.surface.Surface((1150, 700), pygame.SRCALPHA, 32)
-        pygame.draw.rect(self.image, self.color, (53, 30, 358, 188))
+        pygame.draw.rect(self.image, self.color_metal, (53, 30, 358, 188))
+        pygame.draw.rect(self.image, (124, 252, 0), (53, 192, 358, 70))
+        pygame.draw.rect(self.image, (135, 206, 250), (53, 262, 358, 130))
         self.image.blit(Monitor.image, (0, 0))
-        self.image.blit(fontBig.render(f'Накоплено металла:',
-                                       True, (1, 1, 1)), (70, 70))
-        self.image.blit(fontBig.render(f'{self.kilograms}', True, (1, 1, 1)), (70, 100))
-        self.image.blit(fontSmole.render(f'Максимальное кол-во металла:',
-                                         True, (1, 1, 1)), (70, 140))
-        self.image.blit(fontSmole.render(f'{self.max_kilograms}', True, (1, 1, 1)), (70, 170))
+        texts = [monitor_text('Накоплено металла:', 60),
+                 monitor_text(self.kilograms, 90),
+                 monitor_text('Максимальное кол-во металла:', 130, 30),
+                 monitor_text(self.max_kilograms, 160, 30),
+                 monitor_text('Деньги бизнеса:', 200),
+                 monitor_text(self.money_business, 230),
+                 monitor_text(f'Цена за килограмм: {self.price_of_kilogram}', 280, 30),
+                 monitor_text(f'Цена за продажу металла: {self.sale_price}', 340, 30)]
+        for text in texts:
+            self.image.blit(*text)
 
 
 class Worker(pygame.sprite.Sprite):
@@ -83,7 +100,6 @@ class Worker(pygame.sprite.Sprite):
 
     def __init__(self, *groups, y=10):
         super(Worker, self).__init__(*groups)
-        print(groups)
         self.image = Worker.image_plus
         self.levels = [self.image_scales]
         self.level = 0
