@@ -34,6 +34,20 @@ def load_image(name, colorkey=None):
 balka = pygame.transform.scale(load_image('balka.png'), (194, 702))
 
 
+class Button(pygame.sprite.Sprite):
+    def __init__(self, img, x, y, width, height, *groups):
+        super(Button, self).__init__(*groups)
+        self.img = pygame.transform.scale(load_image(img), (width, height))
+        self.image = self.img
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.float_y = self.rect.y
+
+    def rotate_180_vertical(self):
+        self.image = pygame.transform.rotate(self.img, 180)
+
+
 class Door(pygame.sprite.Sprite):
     image = pygame.transform.scale(load_image('door.png'), (1000, 712))
 
@@ -60,7 +74,6 @@ class Monitor(pygame.sprite.Sprite):
         self.color_metal = (255, 255 - proc, 255 - proc)
         self.rect = self.image.get_rect()
         self.rect.x = 0
-        self.rect.y = 0
         self.update_values()
 
     def add_counter(self):
