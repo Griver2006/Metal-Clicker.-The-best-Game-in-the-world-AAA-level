@@ -38,6 +38,7 @@ floor = pygame.transform.scale(load_image('bg_door.png'), (1000, 712))
 class Button(pygame.sprite.Sprite):
     def __init__(self, img, x, y, width, height):
         super(Button, self).__init__(all_sprites, buttons_group)
+        all_sprites.change_layer(self, 2)
         self.img = pygame.transform.scale(load_image(img), (width, height))
         self.image = self.img
         self.rect = self.image.get_rect()
@@ -55,6 +56,7 @@ class Button(pygame.sprite.Sprite):
 class Conveyor(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         super().__init__(all_sprites)
+        all_sprites.change_layer(self, 1)
         self.frames = []
         self.cut_sheet(sheet, columns, rows)
         self.cur_frame = 0
@@ -82,6 +84,7 @@ class Monitor(pygame.sprite.Sprite):
 
     def __init__(self, *groups):
         super(Monitor, self).__init__(*groups)
+        all_sprites.change_layer(self, 5)
         self.image = Monitor.image.copy()
         self.kilograms = 0
         self.max_kilograms = 100
@@ -107,7 +110,6 @@ class Monitor(pygame.sprite.Sprite):
         if not self.btn_send_metal and\
                 self.money_business < self.price_of_kilogram or monitor.kilograms == monitor.max_kilograms:
             self.btn_send_metal = Button('btn_send.png', 428, 150, 100, 100)
-            all_sprites.move_to_front(self.btn_send_metal)
 
     def connect(self, pos):
         if self.btn_arrow.clicked(pos):
@@ -179,6 +181,7 @@ class Worker(pygame.sprite.Sprite):
 
     def __init__(self, y, *groups):
         super(Worker, self).__init__(*groups)
+        all_sprites.change_layer(self, 1)
         self.image = Worker.image_plus.copy()
         self.rect = self.image.get_rect()
         self.rect.x = 820
@@ -213,8 +216,6 @@ class Worker(pygame.sprite.Sprite):
                                  5, 1, 0, self.rect.y)
             self.btn_conv_upgrade.image = pygame.transform.scale(load_image('btn_upgrade_arrow.png'),
                                                                  (80, 80))
-            all_sprites.move_to_front(monitor)
-            all_sprites.move_to_front(monitor.btn_arrow)
         else:
             if self.conv.level < 3:
                 self.conv.level += 1
