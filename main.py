@@ -53,6 +53,19 @@ class Button(pygame.sprite.Sprite):
         return self.rect.collidepoint(pos)
 
 
+class Hint(pygame.sprite.Sprite):
+    def __init__(self, text, x, y):
+        super(Hint, self).__init__(all_sprites)
+        all_sprites.change_layer(self, 8)
+        self.text = pygame.font.Font(None, 40).render(f'{text}', True, (200, 200, 200))
+        self.image = pygame.surface.Surface(self.text.get_size(), pygame.SRCALPHA, 32)
+        self.image.fill((55, 55, 55))
+        self.image.blit(self.text, (0, 0))
+        self.rect = self.image.get_rect()
+        self.rect.x = x - 50
+        self.rect.y = y - 50
+
+
 class Conveyor(pygame.sprite.Sprite):
     def __init__(self, sheet, columns, rows, x, y):
         super().__init__(all_sprites)
@@ -189,6 +202,7 @@ class Worker(pygame.sprite.Sprite):
         self.btn_upgrade = None
         self.btn_conv_upgrade = None
         self.conv = None
+        self.hint = None
         self.counter = 0
         self.level = 0
         self.speeds = {'2': 3, '3': 2.5, '4': 2, '5': 1, '6': 0.7, '7': 0.45}
