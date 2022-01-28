@@ -1,7 +1,6 @@
 import pygame
 import os
 import sys
-import random
 
 pygame.init()
 size = width, height = 1150, 700
@@ -235,7 +234,6 @@ class Worker(pygame.sprite.Sprite):
                 self.hint = None
             if self.rect.collidepoint(pos):
                 if self.conv:
-                    print(str(self.level + self.conv.level))
                     speed = round(1 / self.speeds[str(self.level + self.conv.level)], 1)
                 else:
                     speed = round(1 / self.speeds[str(self.level)], 1)
@@ -245,32 +243,41 @@ class Worker(pygame.sprite.Sprite):
     def upgrade(self):
         if self.level > 3:
             return
-        self.level += 1
-        self.image = pygame.surface.Surface((850, 500), pygame.SRCALPHA, 32)
-        self.image.blit(Worker.levels[self.level - 2], (-15, -3))
-        self.image.blit(Worker.image_scales, (0, 20))
-        if self.level >= 2 and not self.level > 3:
-            self.btn_upgrade.hint_text = f'Цена: {self.level_prices[str(self.level)]}'
-            self.btn_upgrade.show_hint(pygame.mouse.get_pos())
-        if self.level > 3:
-            self.btn_upgrade.hint.kill()
-            self.btn_upgrade.kill()
+        if int(self.level_prices[str(self.level)]) <= monitor.money_business:
+            monitor.money_business -= int(self.level_prices[str(self.level)])
+            monitor.update_values()
+            self.level += 1
+            self.image = pygame.surface.Surface((850, 500), pygame.SRCALPHA, 32)
+            self.image.blit(Worker.levels[self.level - 2], (-15, -3))
+            self.image.blit(Worker.image_scales, (0, 20))
+            if self.level >= 2 and not self.level > 3:
+                self.btn_upgrade.hint_text = f'Цена: {self.level_prices[str(self.level)]}'
+                self.btn_upgrade.show_hint(pygame.mouse.get_pos())
+            if self.level > 3:
+                self.btn_upgrade.hint.kill()
+                self.btn_upgrade.kill()
 
     def conveyor_work(self):
         if not self.conv:
-            self.conv = Conveyor(load_image("sprite_conveyor_belt_animation.png"),
-                                 5, 1, 0, self.rect.y)
-            self.btn_conv_upgrade.image = pygame.transform.scale(load_image('btn_upgrade_arrow.png'),
-                                                                 (80, 80))
-            self.conv.level += 1
-            self.btn_conv_upgrade.hint_text = f'Цена: {self.conv.level_prices[str(self.conv.level)]}'
-            self.btn_conv_upgrade.show_hint(pygame.mouse.get_pos())
+            if int(self.btn_conv_upgrade.hint_text.split()[1]) <= monitor.money_business:
+                monitor.money_business -= int(self.btn_conv_upgrade.hint_text.split()[1])
+                monitor.update_values()
+                self.conv = Conveyor(load_image("sprite_conveyor_belt_animation.png"),
+                                     5, 1, 0, self.rect.y)
+                self.btn_conv_upgrade.image = pygame.transform.scale(load_image('btn_upgrade_arrow.png'),
+                                                                     (80, 80))
+                self.conv.level += 1
+                self.btn_conv_upgrade.hint_text = f'Цена: {self.conv.level_prices[str(self.conv.level)]}'
+                self.btn_conv_upgrade.show_hint(pygame.mouse.get_pos())
         else:
             if self.conv.level < 3:
-                self.conv.level += 1
-                if self.conv.level < 3:
-                    self.btn_conv_upgrade.hint_text = f'Цена: {self.conv.level_prices[str(self.conv.level)]}'
-                    self.btn_conv_upgrade.show_hint(pygame.mouse.get_pos())
+                if int(self.conv.level_prices[str(self.conv.level)]) <= monitor.money_business:
+                    monitor.money_business -= int(self.conv.level_prices[str(self.conv.level)])
+                    monitor.update_values()
+                    self.conv.level += 1
+                    if self.conv.level < 3:
+                        self.btn_conv_upgrade.hint_text = f'Цена: {self.conv.level_prices[str(self.conv.level)]}'
+                        self.btn_conv_upgrade.show_hint(pygame.mouse.get_pos())
             if self.conv.level >= 3:
                 self.btn_conv_upgrade.hint.kill()
                 self.btn_conv_upgrade.kill()
