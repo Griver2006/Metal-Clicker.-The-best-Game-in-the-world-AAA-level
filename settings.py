@@ -5,7 +5,7 @@ class SettingsMonitor:
     def __init__(self):
         self.kilograms = 0
         self.max_kilograms = 100
-        self.money_business = 100000
+        self.money_business = 1000
         self.price_of_kilogram = 20
         self.sale_price = 22
         proc = self.kilograms / (self.max_kilograms / 255)

@@ -1,6 +1,4 @@
 import pygame
-import os
-import sys
 
 from settings import SettingsMonitor, SettingsWorker, SettingsConveyor
 from settings import all_sprites, buttons_group, workers_group
@@ -53,6 +51,8 @@ class Monitor(pygame.sprite.Sprite):
         self.rect.x = 0
         self.rect.y = -405
         self.float_y = self.rect.y
+        self.btn_upgrade_max = Button('btn_upgrade_arrow.png', 20, 500, 80, 80,
+                                      hint_text=f'Увеличить кол-во металла за 5000')
         self.btn_arrow = Button('btn_arrow.png', 175, 0, 100, 100)
         self.btn_stop_work = Button('btn_stop_work.png', 20, 610, 80, 80, hint_text='Остановить работу')
         self.settings = SettingsMonitor()
@@ -71,6 +71,11 @@ class Monitor(pygame.sprite.Sprite):
     def connect(self, pos):
         if self.btn_arrow.clicked(pos):
             self.lowering()
+        if self.btn_upgrade_max.clicked(pos):
+            if self.settings.money_business >= 5000:
+                self.settings.max_kilograms += 100
+                self.settings.money_business -= 5000
+                self.update_values()
         if self.btn_stop_work.clicked(pos):
             if self.settings.is_work:
                 self.settings.is_work = False
