@@ -8,6 +8,7 @@ size = width, height = 1150, 700
 screen = pygame.display.set_mode(size)
 all_sprites = pygame.sprite.LayeredUpdates()
 buttons_group = pygame.sprite.Group()
+workers_group = pygame.sprite.Group()
 
 
 def monitor_text(text, y, scale=40):
@@ -36,7 +37,7 @@ floor = pygame.transform.scale(load_image('bg_door.png'), (1000, 712))
 
 
 class Button(pygame.sprite.Sprite):
-    def __init__(self, img, x, y, width, height):
+    def __init__(self, img, x, y, width, height, hint_text=''):
         super(Button, self).__init__(all_sprites, buttons_group)
         all_sprites.change_layer(self, 2)
         self.img = pygame.transform.scale(load_image(img), (width, height))
@@ -45,6 +46,17 @@ class Button(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
         self.float_y = self.rect.y
+        self.hint_text = hint_text
+        self.hint = None
+
+    def show_hint(self, pos):
+        if self.hint_text:
+            if self.hint:
+                self.hint.kill()
+                self.hint = None
+            if self.rect.collidepoint(pos):
+                self.hint = Hint(self.hint_text,
+                                 pos[0], pos[1])
 
     def rotate_180_vertical(self):
         self.image = pygame.transform.rotate(self.img, 180)
@@ -75,7 +87,8 @@ class Conveyor(pygame.sprite.Sprite):
         self.cur_frame = 0
         self.image = self.frames[self.cur_frame]
         self.rect = self.rect.move(x, y + 130)
-        self.level = 1
+        self.level = 0
+        self.level_prices = {'1': '1150', '2': '1300', '3': '1350'}
         self.conv_speed = {'1': 5, '2': 10, '3': 15}
 
     def cut_sheet(self, sheet, columns, rows):
@@ -205,7 +218,8 @@ class Worker(pygame.sprite.Sprite):
         self.hint = None
         self.counter = 0
         self.level = 0
-        self.speeds = {'2': 3, '3': 2.5, '4': 2, '5': 1, '6': 0.7, '7': 0.45}
+        self.level_prices = {'1': '1020', '2': '1050', '3': '1150'}
+        self.speeds = {'2': 3, '3': 2.5, '4': 2, '5': 1, '6': 0.8, '7': 0.45}
 
     def connect(self, pos):
         if self.level:
@@ -214,6 +228,20 @@ class Worker(pygame.sprite.Sprite):
             if self.btn_conv_upgrade.clicked(pos):
                 self.conveyor_work()
 
+    def show_hint(self, pos):
+        if self.level >= 2:
+            if self.hint:
+                self.hint.kill()
+                self.hint = None
+            if self.rect.collidepoint(pos):
+                if self.conv:
+                    print(str(self.level + self.conv.level))
+                    speed = round(1 / self.speeds[str(self.level + self.conv.level)], 1)
+                else:
+                    speed = round(1 / self.speeds[str(self.level)], 1)
+                self.hint = Hint(f'Скорость: {speed} MPS',
+                                 pos[0], pos[1])
+
     def upgrade(self):
         if self.level > 3:
             return
@@ -221,7 +249,11 @@ class Worker(pygame.sprite.Sprite):
         self.image = pygame.surface.Surface((850, 500), pygame.SRCALPHA, 32)
         self.image.blit(Worker.levels[self.level - 2], (-15, -3))
         self.image.blit(Worker.image_scales, (0, 20))
+        if self.level >= 2 and not self.level > 3:
+            self.btn_upgrade.hint_text = f'Цена: {self.level_prices[str(self.level)]}'
+            self.btn_upgrade.show_hint(pygame.mouse.get_pos())
         if self.level > 3:
+            self.btn_upgrade.hint.kill()
             self.btn_upgrade.kill()
 
     def conveyor_work(self):
@@ -230,10 +262,17 @@ class Worker(pygame.sprite.Sprite):
                                  5, 1, 0, self.rect.y)
             self.btn_conv_upgrade.image = pygame.transform.scale(load_image('btn_upgrade_arrow.png'),
                                                                  (80, 80))
+            self.conv.level += 1
+            self.btn_conv_upgrade.hint_text = f'Цена: {self.conv.level_prices[str(self.conv.level)]}'
+            self.btn_conv_upgrade.show_hint(pygame.mouse.get_pos())
         else:
             if self.conv.level < 3:
                 self.conv.level += 1
-            else:
+                if self.conv.level < 3:
+                    self.btn_conv_upgrade.hint_text = f'Цена: {self.conv.level_prices[str(self.conv.level)]}'
+                    self.btn_conv_upgrade.show_hint(pygame.mouse.get_pos())
+            if self.conv.level >= 3:
+                self.btn_conv_upgrade.hint.kill()
                 self.btn_conv_upgrade.kill()
 
     def update(self, *args, **kwargs):
@@ -242,9 +281,11 @@ class Worker(pygame.sprite.Sprite):
                 self.rect.y -= 20
                 self.image = pygame.surface.Surface((850, 500), pygame.SRCALPHA, 32)
                 self.image.blit(Worker.image_scales, (0, 20))
-                self.btn_upgrade = Button('btn_upgrade_arrow.png', 735, self.rect.y + 55, 80, 80)
                 self.level += 1
-                self.btn_conv_upgrade = Button('btn_upgrade_plus.png', 565, self.rect.y + 55, 80, 80)
+                self.btn_upgrade = Button('btn_upgrade_arrow.png', 735, self.rect.y + 55, 80, 80,
+                                          hint_text=f'Цена: {self.level_prices[str(self.level)]}')
+                self.btn_conv_upgrade = Button('btn_upgrade_plus.png', 565, self.rect.y + 55, 80, 80,
+                                               hint_text=f'Цена: 1100')
                 return
             if monitor.kilograms < monitor.max_kilograms:
                 monitor.add_counter()
@@ -265,9 +306,9 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
     pygame.display.set_caption('Metal Clicker')
 
-    worker1 = Worker(15, all_sprites)
-    worker2 = Worker(245, all_sprites)
-    worker3 = Worker(475, all_sprites)
+    worker1 = Worker(15, all_sprites, workers_group)
+    worker2 = Worker(245, all_sprites, workers_group)
+    worker3 = Worker(475, all_sprites, workers_group)
     monitor = Monitor(all_sprites)
     running = True
     while running:
@@ -277,12 +318,16 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.MOUSEMOTION:
+                for worker in workers_group.sprites():
+                    worker.show_hint(event.pos)
+                for button in buttons_group:
+                    button.show_hint(event.pos)
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     monitor.connect(event.pos)
-                    worker1.connect(event.pos)
-                    worker2.connect(event.pos)
-                    worker3.connect(event.pos)
+                    for worker in workers_group.sprites():
+                        worker.connect(event.pos)
                     all_sprites.update(event)
         all_sprites.update()
         all_sprites.draw(screen)
