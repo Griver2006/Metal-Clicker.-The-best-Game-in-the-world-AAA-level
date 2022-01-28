@@ -12,6 +12,7 @@ class SettingsMonitor:
         self.color_metal = (255, 255 - proc, 255 - proc)
         self.is_open = [0, False]
         self.btn_send_metal = None
+        self.is_work = True
 
 
 class SettingsWorker:

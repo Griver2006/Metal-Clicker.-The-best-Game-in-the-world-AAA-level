@@ -11,7 +11,6 @@ pygame.init()
 size = width, height = 1150, 700
 screen = pygame.display.set_mode(size)
 
-
 # Background
 balka = pygame.transform.scale(load_image('bg_balka.png'), (194, 702))
 floor = pygame.transform.scale(load_image('bg_door.png'), (1000, 712))
@@ -38,8 +37,9 @@ class Conveyor(pygame.sprite.Sprite):
                     frame_location, self.rect.size)))
 
     def update(self, *args, **kwargs):
-        self.cur_frame = (self.cur_frame + self.settings.conv_speed[str(self.settings.level)] / FPS)
-        self.image = self.frames[round(self.cur_frame) % len(self.frames)]
+        if monitor.settings.is_work:
+            self.cur_frame = (self.cur_frame + self.settings.conv_speed[str(self.settings.level)] / FPS)
+            self.image = self.frames[round(self.cur_frame) % len(self.frames)]
 
 
 class Monitor(pygame.sprite.Sprite):
@@ -54,6 +54,7 @@ class Monitor(pygame.sprite.Sprite):
         self.rect.y = -405
         self.float_y = self.rect.y
         self.btn_arrow = Button('btn_arrow.png', 175, 0, 100, 100)
+        self.btn_stop_work = Button('btn_stop_work.png', 20, 610, 80, 80, hint_text='Остановить работу')
         self.settings = SettingsMonitor()
         self.update_values()
 
@@ -70,6 +71,14 @@ class Monitor(pygame.sprite.Sprite):
     def connect(self, pos):
         if self.btn_arrow.clicked(pos):
             self.lowering()
+        if self.btn_stop_work.clicked(pos):
+            if self.settings.is_work:
+                self.settings.is_work = False
+                self.btn_stop_work.hint_text = 'Продолжить работу'
+            else:
+                self.settings.is_work = True
+                self.btn_stop_work.hint_text = 'Остановить работу'
+            self.btn_stop_work.show_hint(pygame.mouse.get_pos())
         if self.settings.money_business < self.settings.price_of_kilogram\
                 or self.settings.kilograms == self.settings.max_kilograms:
             if self.settings.btn_send_metal.clicked(pos):
@@ -235,17 +244,18 @@ class Worker(pygame.sprite.Sprite):
                 return
             if monitor.settings.kilograms < monitor.settings.max_kilograms:
                 monitor.add_counter()
-        if monitor.settings.kilograms < monitor.settings.max_kilograms:
-            if self.settings.level >= 2:
-                self.settings.counter += 1
-                if self.settings.conv:
-                    speed = self.settings.speeds[str(self.settings.level +
-                                                     self.settings.conv.settings.level)] * FPS
-                else:
-                    speed = self.settings.speeds[str(self.settings.level)] * FPS
-                if self.settings.counter >= speed:
-                    self.settings.counter = 0
-                    monitor.add_counter()
+        if monitor.settings.is_work:
+            if monitor.settings.kilograms < monitor.settings.max_kilograms:
+                if self.settings.level >= 2:
+                    self.settings.counter += 1
+                    if self.settings.conv:
+                        speed = self.settings.speeds[str(self.settings.level +
+                                                         self.settings.conv.settings.level)] * FPS
+                    else:
+                        speed = self.settings.speeds[str(self.settings.level)] * FPS
+                    if self.settings.counter >= speed:
+                        self.settings.counter = 0
+                        monitor.add_counter()
 
 
 if __name__ == '__main__':
